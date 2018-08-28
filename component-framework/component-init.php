@@ -135,6 +135,7 @@ include_once("components/classes/gallery.class.php");
 include_once("components/classes/slider.class.php");
 include_once("components/classes/tabs.class.php");
 include_once("components/classes/superbox.class.php");
+include_once("components/classes/lightbox.class.php");
 include_once("components/classes/toggle.class.php");
 
 include_once("components/classes/map.class.php");
