@@ -2490,6 +2490,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                                 'oxy_tabs',
                                 'oxy_tabs_contents',
                                 'oxy_superbox',
+                                'oxy_lightbox',
                                 'oxy_login_form',
                                 'oxy_search_form',
                                 'oxy_toggle',
@@ -2531,6 +2532,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                                 'oxy_tabs',
                                 'oxy_tabs_contents',
                                 'oxy_superbox',
+                                'oxy_lightbox',
                                 'oxy_login_form',
                                 'oxy_search_form',
                                 'oxy_toggle',
@@ -2565,6 +2567,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                                 'oxy_tabs',
                                 'oxy_tabs_contents',
                                 'oxy_superbox',
+                                'oxy_lightbox',
                                 'oxy_login_form',
                                 'oxy_search_form',
                                 'oxy_toggle',
@@ -2604,6 +2607,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                                 'oxy_tabs',
                                 'oxy_tabs_contents',
                                 'oxy_superbox',
+                                'oxy_lightbox',
                                 'oxy_toggle'
                                ];
                 break;
@@ -2659,6 +2663,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                                 'ct_code_block',
                                 'ct_inner_content',
                                 'oxy_superbox',
+                                'oxy_lightbox',
                                 'oxy_login_form',
                                 'oxy_search_form',
                                 'oxy_toggle',
@@ -2714,6 +2719,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                                 'oxy_progress_bar',
                                 'oxy_pricing_box',
                                 'oxy_superbox',
+                                'oxy_lightbox',
                                 'oxy_login_form',
                                 'oxy_search_form',
                                 'oxy_toggle',
@@ -3278,6 +3284,13 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                                '</div>';
                     break
 
+                case 'oxy_lightbox':
+                    template = '<div ' + options + classes + dndDraggableAttr + '>' +
+                                    '<div class="oxy-lightbox-wrap oxy-builtin-container">WOO LIGHTBOX!'+ 
+                                    '</div>' +
+                               '</div>';
+                    break
+
                 case 'oxy_toggle':
                     classes = 'class="oxy-toggle {{getComponentsClasses('+id+', \''+componentName+'\')}}" ';
                     template = '<div is-nestable="true" ' + options + classes + dndDraggableAttr + dndListAttr + dndListAttrHorizontal + 
@@ -3291,7 +3304,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                     break
 
                 default: 
-                    template = "<span>No Template found</span>"
+                    template = "<span>No Template found.</span>"
                     //console.log(componentName);
             }
         }

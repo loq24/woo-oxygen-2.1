@@ -479,7 +479,7 @@ class Oxygen_VSB_Gallery extends CT_Component {
 
         global $oxygen_toolbar; ?>
 
-        <div class="oxygen-sidebar-flex-panel hahah"
+        <div class="oxygen-sidebar-flex-panel"
             ng-hide="!isActiveName('oxy_gallery')">
 
             <div ng-show="!hasOpenTabs('gallery')">

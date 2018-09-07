@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Superbox Component Class
+ * Lightbox Component Class
  * 
  * @since 2.0
  * @author Louis & Ilya
@@ -30,11 +30,6 @@ class Lightbox_block extends CT_Component{
         remove_action("ct_toolbar_fundamentals_list", array( $this, "component_button" ) );
         add_action("oxygen_helpers_components_interactive", array( $this, "component_button" ) );
 
-        // add white list options
-        add_filter("oxy_options_white_list", array( $this, "white_list_options") );
-        // all the options can be unset, so we can use the same white_list_options callback
-        add_filter("oxy_allowed_empty_options_list", array( $this, "white_list_options") );
-
         // output styles
         add_filter("oxygen_default_classes_output", array( $this, "css_output" ) );
 
@@ -47,45 +42,9 @@ class Lightbox_block extends CT_Component{
         // generate #id stlyes
         add_filter("oxy_component_css_styles", array( $this, "generate_id_css"), 10, 5);
 
-        // add specific options
-        add_action("ct_toolbar_component_settings", array( $this, "builder_settings"), 90 );
+        add_action( 'wp_footer', array( $this, 'output_js' ) );
+        add_action( 'wp_head', array( $this, 'output_vendor_css' ) );
     }
-
-
-    /**
-     * Generate CSS for arrays parameters only
-     * 
-     * @since 2.0
-     * @author Ilya
-     */
-
-    function white_list_options($options) {
-
-        $options_to_add = array(
-            // TODO: make it fetch from params automatically based on some flag
-            "superbox_transition_duration",
-            "superbox_secondary_opacity_start",
-            "superbox_secondary_opacity_finish",
-            "superbox_secondary_scale_start",
-            "superbox_secondary_scale_finish",
-            "superbox_secondary_slide_inorout" ,
-            "superbox_secondary_slide_direction",
-            "superbox_secondary_slide_distance",
-            "superbox_primary_opacity_start",
-            "superbox_primary_opacity_finish",
-            "superbox_primary_scale_start",
-            "superbox_primary_scale_finish",
-            "superbox_primary_slide_inorout",
-            "superbox_primary_slide_direction",
-            "superbox_primary_slide_distance",
-
-        );
-
-        $options = array_merge($options, $options_to_add);
-
-        return $options;
-    }
-
 
     /**
      * Generate CSS based on shortcode params
@@ -102,7 +61,7 @@ class Lightbox_block extends CT_Component{
                 array("ct_options"=>'{"key":1}')
             );
 
-        $options['selector'] = ".oxy-superbox";
+        $options['selector'] = ".oxy-lightbox";
 
         echo $this->generate_css($options, true);
     }
@@ -124,7 +83,7 @@ class Lightbox_block extends CT_Component{
         $is_component = false;
 
         foreach ($options as $key => $value) {
-            if (strpos($key,"superbox_")!==false) {
+            if (strpos($key,"lightbox_")!==false) {
                 $is_component = true;
                 break;
             }
@@ -158,74 +117,7 @@ class Lightbox_block extends CT_Component{
 
         return $styles . $this->generate_css($params, false, $defaults);
     }
-
-    
-    /**
-     * 
-     * 
-     * @since 2.0
-     * @author Louis
-     */
-
-    function position_css($position, $forcein = false) {
-
-        ob_start();
-
-        foreach ($position as $prop => $val) {
-
-            if ($forcein == true) {
-                if ($val !== null) {
-                    $val = '0';
-                }
-            }
-
-            if ($val !== null) {
-                echo $prop.": ".$val.";";
-            }
-
-        }
-
-        return ob_get_clean();
-    }
-
-
-    /**
-     * 
-     * 
-     * @since 2.0
-     * @author Louis
-     */
-
-    function slide_position($direction, $distanceoverride = "") {
-
-        $distance = '100%';
-
-        if ($distanceoverride !== "" && $distanceoverride !== "px") {
-            $distance = $distanceoverride;
-        }
-
-        switch ($direction) {
-            case 'left':
-                $position['left'] = '-'.$distance;
-                break;
-            case 'right':
-                $position['left'] = ''.$distance;
-                break;
-            case 'top':
-                $position['top'] = '-'.$distance;
-                break;
-            case 'bottom':
-                $position['top'] = ''.$distance;
-                break;
-        }
-
-        $return['out_css'] = $this->position_css($position); // css for positioning the slide out of the superbox
-        $return['in_css'] = $this->position_css($position, true); // css for positinoing the slide in the superbox
-
-        return $return;
-    }
-
-    
+       
     /**
      * Generate CSS for arrays parameters only
      * 
@@ -235,88 +127,18 @@ class Lightbox_block extends CT_Component{
 
     function generate_css($params=false, $class=false, $defaults=array()) {
 
-        if ($params===false) {
-            $params = $this->param_array;
-        }
-
-        if ($class===false) {
-            $params["selector"] = "#".$params["selector"];
-        } 
-
-        // scaling
-        if(isset($params['superbox_secondary_scale_start'])) $superbox_secondary_scale_start  = $params['superbox_secondary_scale_start'];
-        if(isset($params['superbox_secondary_scale_finish'])) $superbox_secondary_scale_finish = $params['superbox_secondary_scale_finish'];
-        if(isset($params['superbox_primary_scale_start'])) $superbox_primary_scale_start    = $params['superbox_primary_scale_start'];
-        if(isset($params['superbox_primary_scale_finish'])) $superbox_primary_scale_finish   = $params['superbox_primary_scale_finish'];
-
-        if (isset($superbox_secondary_scale_start))     $superbox_secondary_scale_start_transform_css = "transform: scale(".$superbox_secondary_scale_start.");";
-        if (isset($superbox_secondary_scale_finish))    $superbox_secondary_scale_finish_transform_css = "transform: scale(".$superbox_secondary_scale_finish.");";
-        if (isset($superbox_primary_scale_start))       $superbox_primary_scale_start_transform_css = "transform: scale(".$superbox_primary_scale_start.");";
-        if (isset($superbox_primary_scale_finish))      $superbox_primary_scale_finish_transform_css = "transform: scale(".$superbox_primary_scale_finish.");";
-
-        // sliding
-        if (isset($params['superbox_secondary_slide_direction']) && $params['superbox_secondary_slide_direction']) {
-            $css = $this->slide_position($params['superbox_secondary_slide_direction'], $params['superbox_secondary_slide_distance']."px");
-
-            if ($params['superbox_secondary_slide_inorout'] == "in") {
-                $superbox_secondary_initial_css = $css['out_css'];
-                $superbox_secondary_hover_css = $css['in_css'];
-            } else if ($params['superbox_secondary_slide_inorout'] == "out") {
-                $superbox_secondary_initial_css = $css['in_css'];
-                $superbox_secondary_hover_css = $css['out_css'];            
-            }
-        }
-
-        if (isset($params['superbox_primary_slide_direction']) && $params['superbox_primary_slide_direction']) {
-
-            $css = $this->slide_position($params['superbox_primary_slide_direction'], $params['superbox_primary_slide_distance']."px");
-
-            if ($params['superbox_primary_slide_inorout'] == "in") {
-                $superbox_primary_initial_css = $css['out_css'];
-                $superbox_primary_hover_css = $css['in_css'];
-            } else if ($params['superbox_primary_slide_inorout'] == "out") {
-                $superbox_primary_initial_css = $css['in_css'];
-                $superbox_primary_hover_css = $css['out_css'];            
-            }
-        }
-
-        ob_start();
-
-        ?>
-
-            <?php echo $params['selector']; ?> .oxy-superbox-secondary, 
-            <?php echo $params['selector']; ?> .oxy-superbox-primary {
-                <?php if(isset($params['superbox_transition_duration'])) $this->output_single_css_property("transition-duration", $params['superbox_transition_duration']); ?>
-            }
-
-            <?php echo $params['selector']; ?> .oxy-superbox-secondary {
-                <?php if(isset($params['superbox_secondary_opacity_start'])) $this->output_single_css_property("opacity", $params['superbox_secondary_opacity_start']); ?>
-                <?php if(isset($superbox_secondary_initial_css)) echo $superbox_secondary_initial_css; ?>
-                <?php if(isset($superbox_secondary_scale_start_transform_css)) echo $superbox_secondary_scale_start_transform_css; ?>
-            }
-
-            <?php echo $params['selector']; ?>:hover .oxy-superbox-secondary {
-                <?php if(isset($params['superbox_secondary_opacity_finish'])) $this->output_single_css_property("opacity", $params['superbox_secondary_opacity_finish']); ?>
-                <?php if(isset($superbox_secondary_hover_css)) echo $superbox_secondary_hover_css; ?>
-                <?php if(isset($superbox_secondary_scale_finish_transform_css)) echo $superbox_secondary_scale_finish_transform_css; ?>
-            }
-
-            <?php echo $params['selector']; ?> .oxy-superbox-primary {
-                <?php if(isset($params['superbox_primary_opacity_start'])) $this->output_single_css_property("opacity", $params['superbox_primary_opacity_start']); ?>
-                <?php if(isset($superbox_primary_initial_css)) echo $superbox_primary_initial_css; ?>
-                <?php if(isset($superbox_primary_scale_start_transform_css)) echo $superbox_primary_scale_start_transform_css; ?>
-            }
-
-            <?php echo $params['selector']; ?>:hover .oxy-superbox-primary {
-                <?php if(isset($params['superbox_primary_opacity_finish'])) $this->output_single_css_property("opacity", $params['superbox_primary_opacity_finish']); ?>
-                <?php if(isset($superbox_primary_hover_css)) echo $superbox_primary_hover_css; ?>
-                <?php if(isset($superbox_primary_scale_finish_transform_css)) echo $superbox_primary_scale_finish_transform_css; ?>
-            }
-
-        <?php return ob_get_clean();
-
     }
 
+    /**
+     * Output vendor css
+     * 
+     * @since 2.1
+     * @author Lougie Q.
+     */
+
+    function output_vendor_css() {
+        wp_enqueue_style( 'fancybox-css', CT_FW_URI . '/vendor/fancybox/dist/jquery.fancybox.min.css');
+    }
 
     /**
      * Default CSS output
@@ -327,7 +149,7 @@ class Lightbox_block extends CT_Component{
 
     function css_output() {
 
-        $defaultcss = file_get_contents(plugin_dir_path(__FILE__)."superbox/superbox.css");
+        $defaultcss = file_get_contents(plugin_dir_path(__FILE__)."lightbox/lightbox.css");
 
         echo $defaultcss;
     }
@@ -349,8 +171,9 @@ class Lightbox_block extends CT_Component{
         ob_start(); ?>
 
         <div id='<?php echo esc_attr($options['selector']); ?>' class='<?php echo esc_attr($options['classes']); ?>'>
-          <div class='oxy-superbox-wrap'>
-            <?php $this->output_builtin_shortcodes( $content ); ?>
+          <div class='oxy-lightbox-wrap'>
+            <?php var_dump($content); ?>
+            <?php echo 'Yeahhhhh!!!'; //$this->output_builtin_shortcodes( $content ); ?>
           </div>
         </div>
 
@@ -367,255 +190,62 @@ class Lightbox_block extends CT_Component{
      * @author Ilya K.
      */
     
-    function output_js() { ?>
+    function output_js() { 
+        // include Unslider
+        wp_enqueue_script( 'fancybox-js', CT_FW_URI . '/vendor/fancybox/dist/jquery.fancybox.min.js');
+        ?>
+        <script type="text/javascript">
 
-    <script type="text/javascript">
-
-        jQuery('document').ready(function() {
-            jQuery('.oxy-superbox')
-                .on('touchstart', function () {
-                    jQuery(this).trigger('hover');
-                })
-                .on('touchend', function () {
-                    jQuery(this).trigger('hover');
+            jQuery('document').ready(function($) {
+                $('[data-fancybox]').fancybox({
+                    toolbar  : false,
+                    smallBtn : true,
+                    iframe : {
+                        preload : false,
+                        css : {
+                            width : '400px'
+                        },
+                        attr: {
+                          scrolling: "no"
+                        }
+                    }
                 });
-        });
+            });
 
-    </script>
+        </script>
+    
+    <?php }   
+}
 
-    <?php }
-
-
-    /**
-     * Output settings to control the view Superbox shown in builder
-     *
-     * @since 2.0
-     * @author Ilya K.
-     */
-
-    function builder_settings() { 
-
-        global $oxygen_toolbar; ?>
-
-        <div class="oxygen-sidebar-flex-panel"
-            ng-hide="!isActiveName('oxy_superbox')||hasOpenTabs('oxy_superbox')">
-            
-            <div class="oxygen-control-row">
-                <div class='oxygen-control-wrapper'>
-                    <label class='oxygen-control-label'><?php _e("Superbox Editing Mode","oxygen"); ?></label>
-                    <div class='oxygen-control'>
-                            <div class="oxygen-select oxygen-select-box-wrapper">
-                                <div class="oxygen-select-box">
-                                    <div class="oxygen-select-box-current">{{iframeScope.getSuperBoxEditingModeTitle()}}</div>
-                                    <div class="oxygen-select-box-dropdown"></div>
-                                </div>
-                                <div class="oxygen-select-box-options">
-                                    <div class="oxygen-select-box-option" 
-                                        ng-click="iframeScope.setOptionModel('superbox_editing_mode','primary_only')"><?php _e("Show Primary Only","oxygen"); ?></div>
-                                    <div class="oxygen-select-box-option" 
-                                        ng-click="iframeScope.setOptionModel('superbox_editing_mode','secondary_only')"><?php _e("Show Secondary Only","oxygen") ?></div>
-                                    <div class="oxygen-select-box-option" 
-                                        ng-click="iframeScope.setOptionModel('superbox_editing_mode','as_hovered')"><?php _e("As If Hovered","oxygen")?></div>
-                                    <div class="oxygen-select-box-option" 
-                                        ng-click="iframeScope.setOptionModel('superbox_editing_mode','as_not_hovered')"><?php _e("As If Not Hovered","oxygen") ?></div>
-                                    <div class="oxygen-select-box-option" 
-                                        ng-click="iframeScope.setOptionModel('superbox_editing_mode','live')"><?php _e("Live","oxygen") ?></div>
-                                </div>
-                            </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    <?php }
+/**
+* Returns all lightbox posts from `lightbox_woo` post type
+*
+* @since 2.1
+* @author Lougie Q.
+*/
+function get_all_lightbox_posts(){
+    global $post;
+    $args = array('numberposts' => -1,'post_type' => 'woo_lightbox' );
+    $posts = get_posts( $args );
+    $ids = [];
+    $ids[''] = "&nbsp;";
+    foreach ($posts as $post) {
+        $ids[$post->ID] = $post->post_title;
+    }
+    return $ids;
 }
 
 $lightBox = new Lightbox_block( array(
             'name'  => __('Lightbox','oxygen'),
             'tag'   => 'oxy_lightbox',
             'params'=> array(
-                array(
-                        "type"          => "textfield",
-                        "heading"       => __("Animation Speed","oxygen"),
-                        "param_name"    => "superbox_transition_duration",
-                        "value"         => "0.5s",
-                    ),
-            ), 
-            'tabs'  => array(
-                'superbox_primary' => array(
-                    'heading' => __('Primary','oxygen'),
-                    'params' => array(
-                        array(
-                            "type"          => "radio",
-                            "heading"       => __("Slide To", "oxygen"),
-                            "param_name"    => "superbox_primary_slide_inorout",
-                            "value"         => array(
-                                                 'in'    => __("in to view", "oxygen"),
-                                                 'out'   => __("out of view", "oxygen"),
-                                            ),
-                            "default"       => "",
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "radio",
-                            "heading"       => __("Slide Direction", "oxygen"),
-                            "param_name"    => "superbox_primary_slide_direction",
-                            "value"         => array(
-                                                 'top'      => __("top", "oxygen"),
-                                                 'left'     => __("left", "oxygen"),
-                                                 'right'    => __("right", "oxygen"),
-                                                 'bottom'   => __("bottom", "oxygen"),
-                                            ),
-                            "default"       => "",
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "slider-measurebox",
-                            "heading"       => __("Initial Opacity", "oxygen"),
-                            "param_name"    => "superbox_primary_opacity_start",
-                            "value"         => "",
-                            "param_units"   => " ",
-                            "min"           => 0,
-                            "max"           => 1,
-                            "step"          => 0.1,
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "slider-measurebox",
-                            "heading"       => __("Opacity on Hover", "oxygen"),
-                            "param_name"    => "superbox_primary_opacity_finish",
-                            "value"         => "",
-                            "param_units"   => " ",
-                            "min"           => 0,
-                            "max"           => 1,
-                            "step"          => 0.1,
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "slider-measurebox",
-                            "heading"       => __("Initial Scale", "oxygen"),
-                            "param_name"    => "superbox_primary_scale_start",
-                            "value"         => "",
-                            "param_units"   => " ",
-                            "min"           => 0,
-                            "max"           => 10,
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "slider-measurebox",
-                            "heading"       => __("Scale on Hover", "oxygen"),
-                            "param_name"    => "superbox_primary_scale_finish",
-                            "value"         => "",
-                            "param_units"   => " ",
-                            "min"           => 0,
-                            "max"           => 10,
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "measurebox",
-                            "heading"       => __("Override Initial Slide Position","oxygen"),
-                            "param_name"    => "superbox_primary_slide_distance",
-                            "value"         => "",
-                            "param_units"   => "px"
-                        ),
-                        array(
-                            "param_name"    => "superbox_primary_slide_distance-unit",
-                            "value"         => "px",
-                            "hidden"        => true,
-                        ),
-                    ),
-                ),
-                'superbox_secondary' => array(
-                    'heading' => __('Secondary','oxygen'),
-                    'params' => array(
-                        array(
-                            "type"          => "radio",
-                            "heading"       => __("Slide To", "oxygen"),
-                            "param_name"    => "superbox_secondary_slide_inorout",
-                            "value"         => array(
-                                                 'in'    => __("in to view", "oxygen"),
-                                                 'out'   => __("out of view", "oxygen"),
-                                            ),
-                            "default"       => "",
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "radio",
-                            "heading"       => __("Slide Direction", "oxygen"),
-                            "param_name"    => "superbox_secondary_slide_direction",
-                            "value"         => array(
-                                                 'top'      => __("top", "oxygen"),
-                                                 'left'     => __("left", "oxygen"),
-                                                 'right'    => __("right", "oxygen"),
-                                                 'bottom'   => __("bottom", "oxygen"),
-                                            ),
-                            "default"       => "",
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "slider-measurebox",
-                            "heading"       => __("Initial Opacity", "oxygen"),
-                            "param_name"    => "superbox_secondary_opacity_start",
-                            "value"         => "",
-                            "param_units"   => " ",
-                            "min"           => 0,
-                            "max"           => 1,
-                            "step"          => 0.1,
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "slider-measurebox",
-                            "heading"       => __("Opacity on Hover", "oxygen"),
-                            "param_name"    => "superbox_secondary_opacity_finish",
-                            "value"         => "",
-                            "param_units"   => " ",
-                            "min"           => 0,
-                            "max"           => 1,
-                            "step"          => 0.1,
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "slider-measurebox",
-                            "heading"       => __("Initial Scale", "oxygen"),
-                            "param_name"    => "superbox_secondary_scale_start",
-                            "value"         => "",
-                            "param_units"   => " ",
-                            "min"           => 0,
-                            "max"           => 10,
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "slider-measurebox",
-                            "heading"       => __("Scale on Hover", "oxygen"),
-                            "param_name"    => "superbox_secondary_scale_finish",
-                            "value"         => "",
-                            "param_units"   => " ",
-                            "min"           => 0,
-                            "max"           => 10,
-                            "css"           => false,
-                        ),
-                        array(
-                            "type"          => "measurebox",
-                            "heading"       => __("Override Initial Slide Position","oxygen"),
-                            "param_name"    => "superbox_secondary_slide_distance",
-                            "value"         => "",
-                            "param_units"   => "px"
-                        ),
-                        array(
-                            "param_name"    => "superbox_secondary_slide_distance-unit",
-                            "value"         => "px",
-                            "hidden"        => true,
-                        ),
-                    ),
-                ),
-            ),
-               
-            'advanced'  => array(
-                "other" => array(
-                        "values"    => array (
-                            "superbox_editing_mode" => "live"
-                        )
-                    ),
-            )
+                 array(
+                        "type"          => "dropdown",
+                        "heading"       => __("Choose Lightbox Layout", "oxygen"),
+                        "param_name"    => "lightbox-layout",
+                        "value"         => get_all_lightbox_posts(),
+                    )
+            ),        
+
         )
 );
