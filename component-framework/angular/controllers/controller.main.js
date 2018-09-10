@@ -2946,6 +2946,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                         parent.name === 'ct_paragraph' ||
                         parent.name === 'ct_li' ||
                         parent.name === 'ct_link_text' ||
+                        parent.name === 'oxy_lightbox' ||
                         parent.name === 'oxy_icon_box' ||
                         parent.name === 'oxy_testimonial' ||
                         parent.name === 'ct_link_button')) {
@@ -3285,10 +3286,7 @@ CTFrontendBuilder.controller("MainController", function($scope, $parentScope, $h
                     break
 
                 case 'oxy_lightbox':
-                    template = '<div ' + options + classes + dndDraggableAttr + '>' +
-                                    '<div class="oxy-lightbox-wrap oxy-builtin-container">WOO LIGHTBOX!'+ 
-                                    '</div>' +
-                               '</div>';
+                    template = '<a href="" contenteditable="false" ng-model="component.options['+id+'][\'model\'].ct_content" ng-model-options="{ debounce: 10 }" ' + options + classes + dndDraggableAttr + '></a>';
                     break
 
                 case 'oxy_toggle':

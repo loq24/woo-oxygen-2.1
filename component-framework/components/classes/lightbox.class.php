@@ -20,11 +20,7 @@ class Lightbox_block extends CT_Component{
         $this->init( $options );
 
         // Add shortcodes
-        add_shortcode( $this->options['tag'], array( $this, 'shortcode' ) );
-
-        for ( $i = 2; $i <= 16; $i++ ) {
-            add_shortcode( $this->options['tag'] . "_" . $i, array( $this, 'shortcode' ) );
-        }
+        add_shortcode( $this->options['tag'], array( $this, 'add_shortcode' ) );
 
         // change component button place
         remove_action("ct_toolbar_fundamentals_list", array( $this, "component_button" ) );
@@ -156,30 +152,44 @@ class Lightbox_block extends CT_Component{
 
 
     /**
-     * Shortcode output
-     * 
-     * @since 2.0
-     * @author Louis & Ilya
+     * Add shortcode to WordPress
+     *
+     * @since 0.1
      */
 
-    function shortcode($atts, $content) {
+    function add_shortcode( $atts, $content, $name ) {
+        if ( ! $this->validate_shortcode( $atts, $content, $name ) ) {
+            return '';
+        }
 
         $options = $this->set_options( $atts );
+        
+        ob_start(); 
+        $maxWidth = esc_attr($options['modal_max_width']);
+        $maxHeight = esc_attr($options['modal_max_height']);
+        ?><a data-fancybox data-type="iframe" data-src="<?php echo get_permalink(esc_attr($options['lightbox_layout'])); ?>" id="<?php echo esc_attr($options['selector']); ?>" class="<?php echo esc_attr($options['classes']); ?>" href="javascript:;">
+                <?php echo do_shortcode( $content ); ?>
+            </a>
+            <script type="text/javascript">
+                jQuery('document').ready(function($) {
+                    $("#<?php echo esc_attr($options['selector']); ?>").fancybox({
+                        toolbar  : false,
+                        smallBtn : true,
+                        iframe : {
+                            css : {
+                                maxWidth : '<?php echo ($maxWidth) ? $maxWidth."px" : '100%'; ?>',
+                                maxHeight : '<?php echo ($maxHeight) ? $maxHeight."px" : '100%'; ?>',
+                            },
+                            attr: {
+                              scrolling: "no"
+                            }
+                        }
+                    });
+                });
+            </script>
+        <?php
 
-        $this->param_array[$options['id']] = $options;
-
-        ob_start(); ?>
-
-        <div id='<?php echo esc_attr($options['selector']); ?>' class='<?php echo esc_attr($options['classes']); ?>'>
-          <div class='oxy-lightbox-wrap'>
-            <?php var_dump($content); ?>
-            <?php echo 'Yeahhhhh!!!'; //$this->output_builtin_shortcodes( $content ); ?>
-          </div>
-        </div>
-
-        <?php $html = ob_get_clean();
-
-        return $html;
+        return ob_get_clean();
     }
 
 
@@ -190,31 +200,10 @@ class Lightbox_block extends CT_Component{
      * @author Ilya K.
      */
     
-    function output_js() { 
+    function output_js($atts) { 
         // include Unslider
         wp_enqueue_script( 'fancybox-js', CT_FW_URI . '/vendor/fancybox/dist/jquery.fancybox.min.js');
-        ?>
-        <script type="text/javascript">
-
-            jQuery('document').ready(function($) {
-                $('[data-fancybox]').fancybox({
-                    toolbar  : false,
-                    smallBtn : true,
-                    iframe : {
-                        preload : false,
-                        css : {
-                            width : '400px'
-                        },
-                        attr: {
-                          scrolling: "no"
-                        }
-                    }
-                });
-            });
-
-        </script>
-    
-    <?php }   
+    }   
 }
 
 /**
@@ -242,10 +231,95 @@ $lightBox = new Lightbox_block( array(
                  array(
                         "type"          => "dropdown",
                         "heading"       => __("Choose Lightbox Layout", "oxygen"),
-                        "param_name"    => "lightbox-layout",
+                        "param_name"    => "lightbox_layout",
                         "value"         => get_all_lightbox_posts(),
+                    ),
+                 array(
+                        "type"          => "textfield",
+                        "heading"       => __("Modal max width"),
+                        "param_name"    => "modal_max_width",
+                        "value"         => "",
+                        "css"           => false,
+                    ),
+                 array(
+                        "type"          => "textfield",
+                        "heading"       => __("Modal max height"),
+                        "param_name"    => "modal_max_height",
+                        "value"         => "",
+                        "css"           => false,
+                    ),
+                 array(
+                        "type"          => "content",
+                        "param_name"    => "ct_content",
+                        "value"         => "Double-click to edit lightbox text link.",
+                        "css"           => false,
+                    ),
+                    array(
+                        "type"          => "font-family",
+                        "heading"       => __("Font Family", "oxygen"),
+                        "css"           => false,
+                    ),
+                    array(
+                        "type"              => "colorpicker",
+                        "param_name"        => "color",
+                        "heading"           => __("Text Color", "oxygen"),
+                        "hide_wrapper_end"  => true,
+                    ),
+                    array(
+                        "type"              => "colorpicker",
+                        "param_name"        => "hover_color",
+                        "heading"           => __("Hover Color", "oxygen"),
+                        "hide_wrapper_start"=> true,
+                        "state_condition"   => "!=hover"
+                    ),
+                    array(
+                        "type"          => "slider-measurebox",
+                        "heading"       => __("Font Size", "oxygen"),
+                        "param_name"    => "font-size",
+                    ),
+                    array(
+                        "type"          => "dropdown",
+                        "heading"       => __("Font Weight", "oxygen"),
+                        "param_name"    => "font-weight",
+                        "value"         => array (
+                                            ""      => "&nbsp;",
+                                            "100" => "100",
+                                            "200" => "200",
+                                            "300" => "300",
+                                            "400" => "400",
+                                            "500" => "500",
+                                            "600" => "600",
+                                            "700" => "700",
+                                            "800" => "800",
+                                            "900" => "900",
+                                        ),
+                    ),
+                    array(
+                        "type"          => "checkbox",
+                        "heading"       => __("Underline", "oxygen"),
+                        "label"         => __("Underline link text", "oxygen"),
+                        "param_name"    => "text-decoration",
+                        "value"         => "none",
+                        "true_value"    => "underline",
+                        "false_value"   => "none",
                     )
-            ),        
+            ),      
+            'advanced'  => array(
+                "positioning" => array(
+                    "values" => array (
+                        'display' => 'inline-block',
+                    )
+                ),
+                'typography' => array(
+                    'values' => array (
+                        'font-size'     => "",
+                        'font-weight'   => "",
+                    )
+                ),
+                'allowed_html'      => 'post',
+                'allow_shortcodes'  => false,
+            ),
+            'content_editable' => true,  
 
         )
 );
